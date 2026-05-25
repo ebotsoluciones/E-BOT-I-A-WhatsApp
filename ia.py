@@ -2,8 +2,6 @@ import json
 import os
 from openai import OpenAI
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
 PROMPT_BASE = """
 Sos un asistente de WhatsApp para gestión de turnos de un negocio.
 
@@ -34,6 +32,9 @@ Responder SIEMPRE en JSON puro, sin backticks, sin texto extra:
 
 def interpretar_mensaje(texto_usuario: str) -> dict:
     try:
+        # Cliente lazy — se crea solo cuando se llama, no al importar
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -46,7 +47,6 @@ def interpretar_mensaje(texto_usuario: str) -> dict:
 
         contenido = response.choices[0].message.content.strip()
 
-        # Limpiar posibles backticks
         if "```" in contenido:
             contenido = contenido.split("```")[1]
             if contenido.startswith("json"):
