@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>E-Bot Soluciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy: #1a2744;
+    --green: #4caf2f;
+    --green-light: #6fcf52;
+    --white: #ffffff;
+    --gray: #f4f6f9;
+    --text-muted: #7a8499;
+    --shadow: 0 8px 40px rgba(26,39,68,0.13);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--gray);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Fondo sutil con patrón de puntos */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, #c8d6e0 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.45;
+    z-index: 0;
+  }
+
+  /* Blob verde suave arriba */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -120px;
+    right: -120px;
+    width: 420px;
+    height: 420px;
+    background: radial-gradient(circle, rgba(76,175,47,0.18) 0%, transparent 70%);
+    z-index: 0;
+    border-radius: 50%;
+  }
+
+  .card {
+    position: relative;
+    z-index: 1;
+    background: var(--white);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 420px;
+    overflow: hidden;
+    animation: slideUp 0.6s cubic-bezier(.22,1,.36,1) both;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(32px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Header verde con patrón */
+  .card-header {
+    background: linear-gradient(135deg, var(--navy) 0%, #243460 100%);
+    padding: 36px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-header::before {
+    content: '';
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200%;
+    height: 80px;
+    background: var(--white);
+    border-radius: 50%;
+  }
+
+  /* Círculo logo */
+  .logo-ring {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+    animation: popIn 0.5s 0.3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.6); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .logo-ring img {
+    width: 88px;
+    height: 88px;
+    object-fit: contain;
+    border-radius: 50%;
+  }
+
+  /* Punto verde "en línea" */
+  .online-dot {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    width: 18px;
+    height: 18px;
+    background: var(--green);
+    border-radius: 50%;
+    border: 3px solid white;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(76,175,47,0.5); }
+    50%       { box-shadow: 0 0 0 7px rgba(76,175,47,0); }
+  }
+
+  /* Body de la card */
+  .card-body {
+    padding: 32px 28px 28px;
+  }
+
+  .brand-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--navy);
+    text-align: center;
+    letter-spacing: -0.5px;
+    animation: fadeIn 0.5s 0.5s both;
+  }
+
+  .brand-sub {
+    font-size: 0.82rem;
+    color: var(--green);
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 2px;
+    animation: fadeIn 0.5s 0.6s both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e0e6ef, transparent);
+    margin: 20px 0;
+    animation: fadeIn 0.5s 0.7s both;
+  }
+
+  /* Chips de info */
+  .info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: fadeIn 0.5s 0.75s both;
+  }
+
+  .info-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+  }
+
+  .info-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--gray);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+  }
+
+  .info-row a {
+    color: var(--navy);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .info-row a:hover { color: var(--green); }
+
+  /* Badge empresa */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(76,175,47,0.1);
+    color: var(--green);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    animation: fadeIn 0.5s 0.65s both;
+  }
+
+  /* Botones */
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 24px;
+    animation: fadeIn 0.5s 0.9s both;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-demo {
+    background: var(--navy);
+    color: white;
+    box-shadow: 0 4px 20px rgba(26,39,68,0.22);
+  }
+  .btn-demo:hover {
+    background: #243460;
+    box-shadow: 0 6px 28px rgba(26,39,68,0.3);
+    transform: translateY(-1px);
+  }
+
+  .btn-contact {
+    background: var(--green);
+    color: white;
+    box-shadow: 0 4px 20px rgba(76,175,47,0.3);
+  }
+  .btn-contact:hover {
+    background: var(--green-light);
+    box-shadow: 0 6px 28px rgba(76,175,47,0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-icon {
+    font-size: 1.1rem;
+  }
+
+  /* Footer */
+  .card-footer {
+    background: var(--gray);
+    border-top: 1px solid #e8edf5;
+    padding: 14px 28px;
+    text-align: center;
+    animation: fadeIn 0.5s 1s both;
+  }
+
+  .card-footer span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .card-footer strong {
+    color: var(--navy);
+    font-weight: 600;
+  }
+
+  /* Modal DEMO */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,39,68,0.55);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 20px;
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    animation: popIn 0.35s cubic-bezier(.34,1.56,.64,1) both;
+  }
+
+  .modal h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+
+  .modal p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .modal input {
+    width: 100%;
+    padding: 13px 16px;
+    border: 2px solid #e0e6ef;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--navy);
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 14px;
+  }
+
+  .modal input:focus { border-color: var(--green); }
+
+  .modal-btns {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-cancel {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: 2px solid #e0e6ef;
+    background: white;
+    color: var(--text-muted);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .btn-cancel:hover { border-color: var(--navy); color: var(--navy); }
+
+  .btn-go {
+    flex: 2;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: var(--navy);
+    color: white;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-go:hover { background: var(--green); }
+
+  @media (max-width: 440px) {
+    .card-body { padding: 28px 20px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="card-header">
+    <div class="logo-ring">
+      <!-- Logo E-Bot: usamos emoji robot como fallback si no carga imagen -->
+      <img src="Bot_logo.png" alt="E-Bot Soluciones"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+      <div style="display:none;width:88px;height:88px;background:var(--navy);border-radius:50%;align-items:center;justify-content:center;font-size:2.8rem;">🤖</div>
+      <div class="online-dot"></div>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="brand-name">E-Bot Soluciones</div>
+    <div class="brand-sub">Córdoba · Argentina</div>
+
+    <div class="divider"></div>
+
+    <div style="text-align:center; animation: fadeIn 0.5s 0.68s both;">
+      <span class="badge">✅ Cuenta de empresa verificada</span>
+    </div>
+
+    <div class="info-list">
+      <div class="info-row">
+        <div class="info-icon">🤖</div>
+        <span>Automatización inteligente de turnos por WhatsApp</span>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">🌐</div>
+        <a href="https://ebotsoluciones.lat/" target="_blank">ebotsoluciones.lat</a>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">✉️</div>
+        <a href="mailto:contacto@ebotsoluciones.lat">contacto@ebotsoluciones.lat</a>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">📍</div>
+        <span>Córdoba, Argentina</span>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-demo" onclick="abrirDemo()">
+        <span class="btn-icon">🚀</span>
+        DEMO personalizado
+      </button>
+      <a class="btn btn-contact"
+         href="https://wa.me/TUNUMERO?text=Hola%20E-Bot%20Soluciones%2C%20quiero%20m%C3%A1s%20informaci%C3%B3n"
+         target="_blank">
+        <span class="btn-icon">💬</span>
+        Mensaje a E-Bot Soluciones
+      </a>
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <span>Horario de atención: <strong>Lun–Vie 9:00–18:00 hs</strong></span>
+  </div>
+</div>
+
+<!-- Modal DEMO -->
+<div class="modal-overlay" id="modalOverlay" onclick="cerrarSiFuera(event)">
+  <div class="modal" id="modal">
+    <h2>🎉 ¡Probá el DEMO!</h2>
+    <p>Ingresá tu nombre o el nombre de tu negocio para una experiencia personalizada.</p>
+    <input type="text" id="inputNombre" placeholder="Ej: Consultorio Dra. López"
+           maxlength="50" onkeydown="if(event.key==='Enter') irAlDemo()" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-go" onclick="irAlDemo()">¡Empezar demo! →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // REEMPLAZÁ este número con el tuyo de WhatsApp Business
+  const WA_NUMBER = "5493515000000";
+
+  function abrirDemo() {
+    document.getElementById('modalOverlay').classList.add('active');
+    setTimeout(() => document.getElementById('inputNombre').focus(), 100);
+  }
+
+  function cerrarModal() {
+    document.getElementById('modalOverlay').classList.remove('active');
+    document.getElementById('inputNombre').value = '';
+  }
+
+  function cerrarSiFuera(e) {
+    if (e.target === document.getElementById('modalOverlay')) cerrarModal();
+  }
+
+  function irAlDemo() {
+    const nombre = document.getElementById('inputNombre').value.trim();
+    if (!nombre) {
+      document.getElementById('inputNombre').style.borderColor = '#e74c3c';
+      document.getElementById('inputNombre').focus();
+      setTimeout(() => document.getElementById('inputNombre').style.borderColor = '#e0e6ef', 1500);
+      return;
+    }
+    const msg = encodeURIComponent(`DEMO:${nombre}`);
+    window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank');
+    cerrarModal();
+  }
+</script>
+
+</body>
+</html>
