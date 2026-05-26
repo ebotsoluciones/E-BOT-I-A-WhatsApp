@@ -266,7 +266,11 @@ def _procesar_menu(numero, texto, body_original, nombre):
         set_user_state(numero, "estado", "CANCEL_FECHA")
         enviar_texto(numero, "Indicá la fecha del turno a cancelar (dd/mm/yyyy):")
     elif intent == "consulta_general" and mensaje:
-        enviar_texto(numero, f"🤖 {mensaje}")
+        # Si la IA detectó urgencia, mostrar datos de contacto directo
+        if any(w in body_original.lower() for w in ["urgencia", "urgente", "emergencia"]):
+            enviar_texto(numero, f"🚨 *Urgencias*\n\n📞 {TELEFONO}\n✉️ {EMAIL}")
+        else:
+            enviar_texto(numero, f"🤖 {mensaje}")
         enviar_texto(numero, _menu_texto(nombre))
     else:
         enviar_texto(numero, _menu_texto(nombre))
