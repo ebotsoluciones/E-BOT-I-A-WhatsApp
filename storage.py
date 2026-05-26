@@ -1,39 +1,3 @@
-"""
-storage.py — Persistencia con PostgreSQL (Supabase / Railway)
-
-Tablas necesarias (ejecutar una vez en Supabase SQL Editor):
-
-    CREATE TABLE IF NOT EXISTS turnos (
-        id          SERIAL PRIMARY KEY,
-        nombre      TEXT NOT NULL,
-        telefono    TEXT NOT NULL,
-        fecha       TEXT NOT NULL,   -- formato dd/mm/yyyy
-        hora        TEXT NOT NULL,   -- formato HH:MM
-        creado_en   TIMESTAMPTZ DEFAULT NOW()
-    );
-
-    CREATE TABLE IF NOT EXISTS bloqueos (
-        id      SERIAL PRIMARY KEY,
-        fecha   TEXT NOT NULL,
-        hora    TEXT NOT NULL,
-        motivo  TEXT DEFAULT ''
-    );
-
-    CREATE TABLE IF NOT EXISTS mensajes (
-        id          SERIAL PRIMARY KEY,
-        tipo        TEXT NOT NULL,   -- 'Paciente' | 'Admin'
-        telefono    TEXT NOT NULL,
-        texto       TEXT NOT NULL,
-        creado_en   TIMESTAMPTZ DEFAULT NOW()
-    );
-
-    CREATE TABLE IF NOT EXISTS estados_usuarios (
-        telefono    TEXT PRIMARY KEY,
-        estado      TEXT DEFAULT 'MENU',
-        datos       JSONB DEFAULT '{}'
-    );
-"""
-
 import json
 import psycopg2
 import psycopg2.extras
@@ -54,29 +18,62 @@ def get_conn():
         conn.close()
 
 
+def init_db():
+    """Crea las tablas si no existen. Se llama automáticamente al arrancar."""
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS turnos (
+                id          SERIAL PRIMARY KEY,
+                nombre      TEXT NOT NULL,
+                telefono    TEXT NOT NULL,
+                fecha       TEXT NOT NULL,
+                hora        TEXT NOT NULL,
+                creado_en   TIMESTAMPTZ DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS bloqueos (
+                id      SERIAL PRIMARY KEY,
+                fecha   TEXT NOT NULL,
+                hora    TEXT NOT NULL,
+                motivo  TEXT DEFAULT '',
+                UNIQUE (fecha, hora)
+            );
+
+            CREATE TABLE IF NOT EXISTS mensajes (
+                id          SERIAL PRIMARY KEY,
+                tipo        TEXT NOT NULL,
+                telefono    TEXT NOT NULL,
+                texto       TEXT NOT NULL,
+                creado_en   TIMESTAMPTZ DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS estados_usuarios (
+                telefono    TEXT PRIMARY KEY,
+                estado      TEXT DEFAULT 'MENU',
+                datos       JSONB DEFAULT '{}'
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_turnos_telefono ON turnos(telefono);
+            CREATE INDEX IF NOT EXISTS idx_turnos_fecha    ON turnos(fecha);
+        """)
+
+
 # ── ESTADOS DE USUARIO ────────────────────────
 
 def get_user_state(telefono: str, key: str, default=None):
     with get_conn() as conn:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(
-            "SELECT datos FROM estados_usuarios WHERE telefono = %s",
+            "SELECT estado, datos FROM estados_usuarios WHERE telefono = %s",
             (telefono,)
         )
         row = cur.fetchone()
         if not row:
             return default
-        datos = row["datos"] or {}
         if key == "estado":
-            # estado se guarda separado para facilitar queries
-            cur2 = conn.cursor()
-            cur2.execute(
-                "SELECT estado FROM estados_usuarios WHERE telefono = %s",
-                (telefono,)
-            )
-            r2 = cur2.fetchone()
-            return r2[0] if r2 else default
-        return datos.get(key, default)
+            return row["estado"]
+        return (row["datos"] or {}).get(key, default)
 
 
 def set_user_state(telefono: str, key: str, value):
@@ -114,7 +111,6 @@ def clear_user(telefono: str):
 
 
 def get_full_state(telefono: str) -> dict:
-    """Devuelve {'estado': ..., 'datos': {...}} de una sola query."""
     with get_conn() as conn:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(
@@ -208,13 +204,9 @@ def horarios_libres(fecha: str) -> list:
     from services import generar_horarios
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute(
-            "SELECT hora FROM turnos WHERE fecha = %s", (fecha,)
-        )
+        cur.execute("SELECT hora FROM turnos WHERE fecha = %s", (fecha,))
         turnos_hora = {r[0] for r in cur.fetchall()}
-        cur.execute(
-            "SELECT hora FROM bloqueos WHERE fecha = %s", (fecha,)
-        )
+        cur.execute("SELECT hora FROM bloqueos WHERE fecha = %s", (fecha,))
         bloqueos_hora = {r[0] for r in cur.fetchall()}
     ocupados = turnos_hora | bloqueos_hora
     return [h for h in generar_horarios() if h not in ocupados]
