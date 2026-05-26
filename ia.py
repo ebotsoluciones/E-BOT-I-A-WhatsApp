@@ -32,11 +32,14 @@ Responder SIEMPRE en JSON puro, sin backticks, sin texto extra:
 
 def interpretar_mensaje(texto_usuario: str) -> dict:
     try:
-        # Cliente lazy — se crea solo cuando se llama, no al importar
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        # Cliente lazy compatible con NVIDIA NIM API
+        client = OpenAI(
+            api_key=os.getenv("NVIDIA_API_KEY"),
+            base_url="https://integrate.api.nvidia.com/v1"
+        )
 
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="meta/llama-3.1-8b-instruct",
             messages=[
                 {"role": "system", "content": PROMPT_BASE},
                 {"role": "user",   "content": texto_usuario}
