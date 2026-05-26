@@ -10,7 +10,9 @@ Ejemplos:
 "quiero un turno" -> {"intent":"crear_turno","fecha":"","hora":"","mensaje":""}
 "mis turnos" -> {"intent":"ver_turnos","fecha":"","hora":"","mensaje":""}
 "cancelar turno" -> {"intent":"cancelar_turno","fecha":"","hora":"","mensaje":""}
-"urgencia" -> {"intent":"consulta_general","fecha":"","hora":"","mensaje":"Te comunico con urgencias"}
+"urgencia" -> {"intent":"consulta_general","fecha":"","hora":"","mensaje":"urgencia"}
+"tengo una urgencia" -> {"intent":"consulta_general","fecha":"","hora":"","mensaje":"urgencia"}
+"emergencia" -> {"intent":"consulta_general","fecha":"","hora":"","mensaje":"urgencia"}
 "mensaje" -> {"intent":"consulta_general","fecha":"","hora":"","mensaje":"Dejame tu mensaje"}
 "hola" -> {"intent":"consulta_general","fecha":"","hora":"","mensaje":"¡Hola! ¿En qué puedo ayudarte?"}
 
