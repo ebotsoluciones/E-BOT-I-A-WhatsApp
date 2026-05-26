@@ -2,58 +2,54 @@ import json
 import os
 from openai import OpenAI
 
-PROMPT_BASE = """
-Sos un asistente de WhatsApp para gestión de turnos de un negocio.
+PROMPT_BASE = """Interpretá el mensaje y respondé SOLO con JSON, sin texto extra, sin backticks.
 
-Tu función NO es conversar libremente ni tomar decisiones finales.
-Tu función es interpretar mensajes de usuarios y devolver información estructurada.
+Intenciones posibles: crear_turno, ver_turnos, cancelar_turno, consulta_general, desconocido
 
-Intenciones posibles:
-- crear_turno
-- ver_turnos
-- cancelar_turno
-- consulta_general
-- desconocido
+Ejemplos:
+"quiero un turno" -> {"intent":"crear_turno","fecha":"","hora":"","mensaje":""}
+"mis turnos" -> {"intent":"ver_turnos","fecha":"","hora":"","mensaje":""}
+"cancelar turno" -> {"intent":"cancelar_turno","fecha":"","hora":"","mensaje":""}
+"urgencia" -> {"intent":"consulta_general","fecha":"","hora":"","mensaje":"Te comunico con urgencias"}
+"mensaje" -> {"intent":"consulta_general","fecha":"","hora":"","mensaje":"Dejame tu mensaje"}
+"hola" -> {"intent":"consulta_general","fecha":"","hora":"","mensaje":"¡Hola! ¿En qué puedo ayudarte?"}
 
-Extraer si están presentes:
-- fecha (formato dd/mm/yyyy si es posible)
-- hora  (formato HH:MM si es posible)
-
-Responder SIEMPRE en JSON puro, sin backticks, sin texto extra:
-
-{
-  "intent": "",
-  "fecha": "",
-  "hora": "",
-  "mensaje": ""
-}
-"""
+Extraer fecha (dd/mm/yyyy) y hora (HH:MM) si están presentes.
+Responder SOLO JSON."""
 
 
 def interpretar_mensaje(texto_usuario: str) -> dict:
     try:
-        # Cliente lazy compatible con NVIDIA NIM API
         client = OpenAI(
             api_key=os.getenv("NVIDIA_API_KEY"),
-            base_url="https://integrate.api.nvidia.com/v1"
+            base_url="https://integrate.api.nvidia.com/v1",
+            timeout=8.0  # máximo 8 segundos
         )
 
         response = client.chat.completions.create(
-            model="meta/llama-3.1-8b-instruct",
+            model="nvidia/llama-3.1-nemotron-nano-8b-instruct",
             messages=[
                 {"role": "system", "content": PROMPT_BASE},
                 {"role": "user",   "content": texto_usuario}
             ],
-            temperature=0.2,
-            max_tokens=200
+            temperature=0.1,
+            max_tokens=100
         )
 
         contenido = response.choices[0].message.content.strip()
 
+        # Limpiar backticks si los hay
         if "```" in contenido:
-            contenido = contenido.split("```")[1]
+            partes = contenido.split("```")
+            contenido = partes[1] if len(partes) > 1 else partes[0]
             if contenido.startswith("json"):
                 contenido = contenido[4:]
+
+        # Extraer solo el JSON si hay texto extra
+        inicio = contenido.find("{")
+        fin    = contenido.rfind("}") + 1
+        if inicio >= 0 and fin > inicio:
+            contenido = contenido[inicio:fin]
 
         data = json.loads(contenido)
 
