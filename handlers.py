@@ -8,92 +8,75 @@ from storage import (
 )
 from services  import normalizar_hora
 from ia        import interpretar_mensaje
-from whatsapp  import (
-    enviar_texto,
-    enviar_imagen_con_botones,
-    enviar_interactivo_botones,
-    reenviar_a_numero
+from whatsapp  import enviar_texto, reenviar_a_numero
+from config    import ADMINS, MODO_TEST, MARCA, TELEFONO, EMAIL, WEB, HORARIO
+
+NUMERO_ASESOR = "5492494510525"
+
+# ═══════════════════════════════════════════════════════════
+# MENSAJES
+# ═══════════════════════════════════════════════════════════
+
+MSG_PRESENTACION = (
+    "🤖 *E-Bot Soluciones*\n"
+    "_Automatización inteligente de turnos por WhatsApp_\n\n"
+    "✅ Turnos automáticos 24/7\n"
+    "✅ Sin llamadas ni confusiones\n"
+    "✅ Recordatorios automáticos\n"
+    "📍 Córdoba, Argentina\n\n"
+    "¿Qué querés hacer?\n\n"
+    "1️⃣  Ver *DEMO* personalizada\n"
+    "2️⃣  Hablar con un *asesor*"
 )
-from config import ADMINS, MODO_TEST, MARCA, TELEFONO, EMAIL, WEB, HORARIO
 
-# ── CONFIGURACIÓN ─────────────────────────────
-LOGO_URL      = "https://raw.githubusercontent.com/ebotsoluciones/ebotsoluciones-web/main/logo.png"
-NUMERO_ASESOR = "5492494510525"   # tu número personal sin + ni espacios
+MSG_PEDIR_NOMBRE = (
+    "🎯 *¡Genial! Vamos a personalizar tu demo.*\n\n"
+    "¿Cómo se llama tu negocio?\n"
+    "_(Ej: Consultorio Dra. López, Estudio Barlovento)_"
+)
+
+MSG_ASESOR = (
+    "💬 *¡Con gusto te contactamos!*\n\n"
+    "Escribí tu nombre y consulta y te respondemos a la brevedad 👇"
+)
 
 
-# ═══════════════════════════════════════════════════════════
-# PRESENTACIÓN PROFESIONAL (imagen + botones)
-# ═══════════════════════════════════════════════════════════
-
-def enviar_presentacion(numero: str):
-    """Mensaje interactivo con logo, descripción y 2 botones."""
-    ok = enviar_imagen_con_botones(
-        numero=numero,
-        imagen_url=LOGO_URL,
-        body=(
-            "🤖 *Automatización inteligente de turnos*\n\n"
-            "Gestioná tu agenda por WhatsApp sin esfuerzo:\n"
-            "✅ Turnos automáticos 24/7\n"
-            "✅ Recordatorios y cancelaciones\n"
-            "✅ Sin llamadas ni confusiones\n\n"
-            "📍 Córdoba, Argentina"
-        ),
-        footer="ebotsoluciones.lat",
-        botones=[
-            {"id": "btn_demo",    "title": "🚀 Ver DEMO"},
-            {"id": "btn_asesor",  "title": "💬 Hablar con asesor"},
-        ]
+def _menu_texto(nombre):
+    return (
+        f"🦙 *E-Bot*  —  Hola, *{nombre}* 👋\n\n"
+        f"1️⃣  Sacar un turno\n"
+        f"2️⃣  Ver mis turnos\n"
+        f"3️⃣  Dejar un mensaje\n"
+        f"4️⃣  Urgencia\n"
+        f"0️⃣  Salir"
     )
-    # Fallback a texto si falla el interactivo (ej: número no soporta)
-    if not ok:
-        enviar_texto(numero, (
-            "🤖 *E-Bot Soluciones*\n"
-            "_Automatización inteligente de turnos_\n\n"
-            "✅ Turnos automáticos 24/7\n"
-            "✅ Sin llamadas ni confusiones\n"
-            "📍 Córdoba, Argentina\n\n"
-            "Respondé:\n1️⃣ Ver DEMO\n2️⃣ Hablar con asesor"
-        ))
 
 
-def enviar_cierre_demo(numero: str, nombre: str):
-    """Mensaje de cierre al salir del demo."""
+def _msg_bienvenida_demo(nombre):
+    return (
+        f"🎉 *¡Bienvenido/a, {nombre}!*\n\n"
+        f"Esto es lo que E-Bot puede hacer por tu negocio 👇\n\n"
+        f"1️⃣  Sacar un turno\n"
+        f"2️⃣  Ver mis turnos\n"
+        f"3️⃣  Dejar un mensaje\n"
+        f"4️⃣  Urgencia\n"
+        f"0️⃣  Salir\n\n"
+        f"_Escribí el número o contame qué necesitás._"
+    )
+
+
+def _msg_cierre(nombre):
     nombre_fmt = f", *{nombre}*" if nombre else ""
-    enviar_interactivo_botones(
-        numero=numero,
-        header_text="🚀 ¿Te convenciste?",
-        body=(
-            f"Gracias por probar E-Bot{nombre_fmt} 🎉\n\n"
-            "Implementamos el sistema en tu negocio en *48hs*.\n\n"
-            f"⏰ {HORARIO}"
-        ),
-        footer="ebotsoluciones.lat",
-        botones=[
-            {"id": "btn_contactar", "title": "📞 Quiero que me llamen"},
-            {"id": "btn_pregunta",  "title": "❓ Tengo una pregunta"},
-            {"id": "btn_volver",    "title": "🔄 Seguir probando"},
-        ]
-    )
-
-
-def _menu_demo(nombre: str):
-    return enviar_interactivo_botones(
-        numero=None,  # se pasa desde afuera
-        header_text=f"¡Bienvenido/a, {nombre}!",
-        body=(
-            "Esto es lo que E-Bot puede hacer por tu negocio 👇\n\n"
-            "1️⃣ Sacar un turno\n"
-            "2️⃣ Ver mis turnos\n"
-            "3️⃣ Dejar un mensaje\n"
-            "4️⃣ Urgencias\n"
-            "0️⃣ Salir"
-        ),
-        footer="Escribí el número o contame qué necesitás",
-        botones=[
-            {"id": "btn_turno",   "title": "📅 Sacar turno"},
-            {"id": "btn_turnos",  "title": "📋 Mis turnos"},
-            {"id": "btn_salir",   "title": "👋 Salir"},
-        ]
+    return (
+        f"✅ *Gracias por probar E-Bot{nombre_fmt}* 🎉\n\n"
+        f"Implementamos el sistema en tu negocio en *48hs*.\n\n"
+        f"¿Qué querés hacer?\n\n"
+        f"1️⃣  Quiero que me contacten\n"
+        f"2️⃣  Tengo una pregunta\n"
+        f"3️⃣  Seguir probando\n\n"
+        f"📞 {TELEFONO}\n"
+        f"✉️ {EMAIL}\n"
+        f"🌐 {WEB}"
     )
 
 
@@ -127,34 +110,27 @@ def procesar(numero: str, body: str):
     # ── RESET ─────────────────────────────────────────────────
     if texto_l in ["hola", "menu", "/start", "inicio", "reiniciar", "demo"]:
         clear_user(numero)
-        enviar_presentacion(numero)
+        enviar_texto(numero, MSG_PRESENTACION)
         set_user_state(numero, "estado", "FUNNEL_INICIO")
         return
 
     # ── PRIMER CONTACTO ───────────────────────────────────────
     if estado == "MENU" and not nombre:
-        enviar_presentacion(numero)
+        enviar_texto(numero, MSG_PRESENTACION)
         set_user_state(numero, "estado", "FUNNEL_INICIO")
         return
 
-    # ── FUNNEL: ELECCIÓN (botones interactivos o texto) ───────
+    # ── FUNNEL: ELECCIÓN ──────────────────────────────────────
     if estado == "FUNNEL_INICIO":
-        # Respuesta de botón interactivo llega como el ID o el título
-        if texto_l in ["btn_demo", "1", "ver demo", "🚀 ver demo", "demo"]:
+        if texto_l in ["1", "demo", "ver demo", "quiero demo"]:
             set_user_state(numero, "estado", "FUNNEL_PEDIR_NOMBRE")
-            enviar_texto(numero, (
-                "🎯 *¡Genial! Vamos a personalizar tu demo.*\n\n"
-                "¿Cómo se llama tu negocio?\n"
-                "_(Ej: Consultorio Dra. López, Estudio Barlovento)_"
-            ))
-        elif texto_l in ["btn_asesor", "2", "hablar", "asesor", "💬 hablar con asesor"]:
+            enviar_texto(numero, MSG_PEDIR_NOMBRE)
+        elif texto_l in ["2", "asesor", "hablar", "contacto", "quiero hablar"]:
             set_user_state(numero, "estado", "FUNNEL_ASESOR_MSG")
-            enviar_texto(numero, (
-                "💬 *¡Con gusto te contactamos!*\n\n"
-                "Escribí tu nombre y consulta y te respondemos a la brevedad 👇"
-            ))
+            enviar_texto(numero, MSG_ASESOR)
         else:
-            enviar_presentacion(numero)
+            # Cualquier otra cosa → mostrar opciones de nuevo
+            enviar_texto(numero, "Respondé *1* para ver la DEMO o *2* para hablar con un asesor.")
         return
 
     # ── FUNNEL: CAPTURA NOMBRE ────────────────────────────────
@@ -165,60 +141,42 @@ def procesar(numero: str, body: str):
         nombre_nuevo = texto.strip()
         set_user_state(numero, "nombre_negocio", nombre_nuevo)
         set_user_state(numero, "estado", "MENU")
-        # Menú demo con botones
-        enviar_interactivo_botones(
-            numero=numero,
-            header_text=f"¡Bienvenido/a, {nombre_nuevo}!",
-            body=(
-                "Esto es lo que E-Bot puede hacer por tu negocio 👇\n\n"
-                "📅 Sacar y gestionar turnos\n"
-                "📋 Consultar agenda\n"
-                "💬 Recibir mensajes\n"
-                "🚨 Canal de urgencias\n\n"
-                "Escribí el número o tocá un botón:"
-            ),
-            footer="ebotsoluciones.lat",
-            botones=[
-                {"id": "btn_turno",  "title": "📅 Sacar turno"},
-                {"id": "btn_turnos", "title": "📋 Mis turnos"},
-                {"id": "btn_salir",  "title": "👋 Salir"},
-            ]
-        )
+        enviar_texto(numero, _msg_bienvenida_demo(nombre_nuevo))
         return
 
     # ── FUNNEL: MENSAJE AL ASESOR ─────────────────────────────
     if estado == "FUNNEL_ASESOR_MSG":
         guardar_mensaje("Lead", numero, texto)
-        # Reenviar al número personal del asesor
         reenviar_a_numero(NUMERO_ASESOR, numero, texto)
         enviar_texto(numero, (
             "✅ *¡Mensaje recibido!*\n\n"
-            "Un asesor de E-Bot Soluciones te va a contactar pronto.\n\n"
-            f"📞 {TELEFONO}\n"
-            f"✉️ {EMAIL}\n"
-            f"🌐 {WEB}"
+            "Un asesor te va a contactar pronto.\n\n"
+            f"📞 {TELEFONO}\n✉️ {EMAIL}\n🌐 {WEB}\n\n"
+            "_Escribí *hola* para volver al inicio._"
         ))
         set_user_state(numero, "estado", "MENU")
+        if nombre:
+            set_user_state(numero, "nombre_negocio", nombre)
         return
 
     # ── CIERRE DEMO ───────────────────────────────────────────
     if estado == "FUNNEL_CIERRE":
-        if texto_l in ["btn_contactar", "1", "quiero que me llamen"]:
+        if texto_l in ["1", "contactar", "llamar"]:
             set_user_state(numero, "estado", "FUNNEL_ASESOR_MSG")
             enviar_texto(numero, "✍️ Dejanos tu nombre y consulta, te contactamos:")
-        elif texto_l in ["btn_pregunta", "2", "tengo una pregunta"]:
+        elif texto_l in ["2", "pregunta"]:
             set_user_state(numero, "estado", "FUNNEL_ASESOR_MSG")
             enviar_texto(numero, "✍️ Escribí tu pregunta:")
-        elif texto_l in ["btn_volver", "3", "seguir probando"]:
+        elif texto_l in ["3", "seguir", "volver"]:
             set_user_state(numero, "estado", "MENU")
             enviar_texto(numero, _menu_texto(nombre))
         else:
-            enviar_cierre_demo(numero, nombre)
+            enviar_texto(numero, _msg_cierre(nombre))
         return
 
     # ── SALIR ─────────────────────────────────────────────────
-    if texto_l in ["0", "salir", "chau", "bye", "btn_salir"]:
-        enviar_cierre_demo(numero, nombre)
+    if texto_l in ["0", "salir", "chau", "bye"]:
+        enviar_texto(numero, _msg_cierre(nombre))
         set_user_state(numero, "estado", "FUNNEL_CIERRE")
         return
 
@@ -260,7 +218,7 @@ def procesar(numero: str, body: str):
     if nombre:
         enviar_texto(numero, _menu_texto(nombre))
     else:
-        enviar_presentacion(numero)
+        enviar_texto(numero, MSG_PRESENTACION)
         set_user_state(numero, "estado", "FUNNEL_INICIO")
 
 
@@ -268,32 +226,11 @@ def procesar(numero: str, body: str):
 # MENÚ
 # ═══════════════════════════════════════════════════════════
 
-def _menu_texto(nombre):
-    return (
-        f"🦙 *E-Bot*  —  Hola, *{nombre}* 👋\n\n"
-        f"1️⃣  Sacar un turno\n"
-        f"2️⃣  Ver mis turnos\n"
-        f"3️⃣  Dejar un mensaje\n"
-        f"4️⃣  Urgencia\n"
-        f"0️⃣  Salir"
-    )
-
-
 def _procesar_menu(numero, texto, body_original, nombre):
-    # Botones interactivos
-    if texto_id := {
-        "btn_turno":  "1",
-        "btn_turnos": "2",
-        "btn_salir":  "0",
-    }.get(texto.lower()):
-        texto = texto_id
-
-    # Numérico (instantáneo)
     if texto.strip() in ["1", "2", "3", "4", "0"]:
         _menu_numerico(numero, texto.strip(), nombre)
         return
 
-    # IA para lenguaje natural
     resultado = interpretar_mensaje(body_original)
     intent    = resultado["intent"]
     mensaje   = resultado["mensaje"]
@@ -323,7 +260,7 @@ def _menu_numerico(numero, opcion, nombre):
     elif opcion == "4":
         enviar_texto(numero, f"🚨 *Urgencias*\n\n📞 {TELEFONO}\n✉️ {EMAIL}")
     elif opcion == "0":
-        enviar_cierre_demo(numero, nombre)
+        enviar_texto(numero, _msg_cierre(nombre))
         set_user_state(numero, "estado", "FUNNEL_CIERRE")
 
 
@@ -353,7 +290,7 @@ def _flujo_turno_fecha(numero, texto):
     try:
         fecha = datetime.strptime(texto.strip(), "%d/%m/%Y").date()
     except ValueError:
-        enviar_texto(numero, "❌ Formato inválido. Usá dd/mm/yyyy (ej: 27/05/2025)")
+        enviar_texto(numero, "❌ Formato inválido. Usá dd/mm/yyyy (ej: 27/05/2026)")
         return
 
     if fecha < datetime.now().date():
