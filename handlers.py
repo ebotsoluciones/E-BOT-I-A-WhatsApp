@@ -8,10 +8,33 @@ from storage import (
 )
 from services  import normalizar_hora
 from ia        import interpretar_mensaje
-from whatsapp  import enviar_texto, reenviar_a_numero
+from whatsapp  import enviar_texto, reenviar_a_numero, enviar_imagen_con_botones
 from config    import ADMINS, MODO_TEST, MARCA, TELEFONO, EMAIL, WEB, HORARIO
 
 NUMERO_ASESOR = "5492494510525"
+LOGO_URL      = "https://raw.githubusercontent.com/ebotsoluciones/ebotsoluciones-web/main/logo.png"
+
+
+def enviar_presentacion(numero: str):
+    """Presentación con imagen + botones. Fallback a texto si falla."""
+    ok = enviar_imagen_con_botones(
+        numero=numero,
+        imagen_url=LOGO_URL,
+        body=(
+            "🤖 *Automatización inteligente de turnos*\n\n"
+            "✅ Turnos automáticos 24/7\n"
+            "✅ Sin llamadas ni confusiones\n"
+            "✅ Recordatorios automáticos\n"
+            "📍 Córdoba, Argentina"
+        ),
+        footer="ebotsoluciones.lat",
+        botones=[
+            {"id": "btn_demo",   "title": "🚀 Ver DEMO"},
+            {"id": "btn_asesor", "title": "💬 Hablar con asesor"},
+        ]
+    )
+    if not ok:
+        enviar_presentacion(numero)
 
 # ═══════════════════════════════════════════════════════════
 # MENSAJES
@@ -110,22 +133,22 @@ def procesar(numero: str, body: str):
     # ── RESET ─────────────────────────────────────────────────
     if texto_l in ["hola", "menu", "/start", "inicio", "reiniciar", "demo"]:
         clear_user(numero)
-        enviar_texto(numero, MSG_PRESENTACION)
+        enviar_presentacion(numero)
         set_user_state(numero, "estado", "FUNNEL_INICIO")
         return
 
     # ── PRIMER CONTACTO ───────────────────────────────────────
     if estado == "MENU" and not nombre:
-        enviar_texto(numero, MSG_PRESENTACION)
+        enviar_presentacion(numero)
         set_user_state(numero, "estado", "FUNNEL_INICIO")
         return
 
     # ── FUNNEL: ELECCIÓN ──────────────────────────────────────
     if estado == "FUNNEL_INICIO":
-        if texto_l in ["1", "demo", "ver demo", "quiero demo"]:
+        if texto_l in ["1", "demo", "ver demo", "quiero demo", "btn_demo", "🚀 ver demo"]:
             set_user_state(numero, "estado", "FUNNEL_PEDIR_NOMBRE")
             enviar_texto(numero, MSG_PEDIR_NOMBRE)
-        elif texto_l in ["2", "asesor", "hablar", "contacto", "quiero hablar"]:
+        elif texto_l in ["2", "asesor", "hablar", "contacto", "quiero hablar", "btn_asesor", "💬 hablar con asesor"]:
             set_user_state(numero, "estado", "FUNNEL_ASESOR_MSG")
             enviar_texto(numero, MSG_ASESOR)
         else:
@@ -218,7 +241,7 @@ def procesar(numero: str, body: str):
     if nombre:
         enviar_texto(numero, _menu_texto(nombre))
     else:
-        enviar_texto(numero, MSG_PRESENTACION)
+        enviar_presentacion(numero)
         set_user_state(numero, "estado", "FUNNEL_INICIO")
 
 
