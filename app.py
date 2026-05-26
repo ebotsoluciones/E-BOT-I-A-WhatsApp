@@ -16,6 +16,16 @@ from handlers import procesar
 app = Flask(__name__)
 
 
+# ── HEALTH CHECK ─────────────────────────────────────────────────────────────
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({
+        "status": "ok",
+        "bot": "E-Bot Soluciones",
+        "webhook": "/webhook"
+    }), 200
+
+
 # ── VERIFICACIÓN DEL WEBHOOK (GET) ────────────────────────────────────────────
 @app.route("/webhook", methods=["GET"])
 def verify():
