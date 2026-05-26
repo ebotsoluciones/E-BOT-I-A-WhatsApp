@@ -27,7 +27,7 @@ def interpretar_mensaje(texto_usuario: str) -> dict:
         )
 
         response = client.chat.completions.create(
-            model="nvidia/llama-3.1-nemotron-nano-8b-instruct",
+            model="meta/llama-3.1-8b-instruct",
             messages=[
                 {"role": "system", "content": PROMPT_BASE},
                 {"role": "user",   "content": texto_usuario}
