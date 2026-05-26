@@ -8,45 +8,24 @@ from storage import (
 )
 from services  import normalizar_hora
 from ia        import interpretar_mensaje
-from whatsapp  import enviar_texto, reenviar_a_numero, enviar_imagen_con_botones
+from whatsapp  import (
+    enviar_texto, reenviar_a_numero,
+    enviar_imagen_con_botones, enviar_interactivo_botones
+)
 from config    import ADMINS, MODO_TEST, MARCA, TELEFONO, EMAIL, WEB, HORARIO
 
 NUMERO_ASESOR = "5492494510525"
 LOGO_URL      = "https://raw.githubusercontent.com/ebotsoluciones/ebotsoluciones-web/main/logo.png"
-
-
-def enviar_presentacion(numero: str):
-    """Presentación con imagen + botones. Fallback a texto si falla."""
-    ok = enviar_imagen_con_botones(
-        numero=numero,
-        imagen_url=LOGO_URL,
-        body=(
-            "🤖 *Automatización inteligente de turnos*\n\n"
-            "✅ Turnos automáticos 24/7\n"
-            "✅ Sin llamadas ni confusiones\n"
-            "✅ Recordatorios automáticos\n"
-            "📍 Córdoba, Argentina"
-        ),
-        footer="ebotsoluciones.lat",
-        botones=[
-            {"id": "btn_demo",   "title": "🚀 Ver DEMO"},
-            {"id": "btn_asesor", "title": "💬 Hablar con asesor"},
-        ]
-    )
-    if not ok:
-        enviar_presentacion(numero)
 
 # ═══════════════════════════════════════════════════════════
 # MENSAJES
 # ═══════════════════════════════════════════════════════════
 
 MSG_PRESENTACION = (
-    "🤖 *E-Bot Soluciones*\n"
-    "_Automatización inteligente de turnos por WhatsApp_\n\n"
+    "🤖 *Probá el DEMO con I.A.*\n\n"
     "✅ Turnos automáticos 24/7\n"
     "✅ Sin llamadas ni confusiones\n"
-    "✅ Recordatorios automáticos\n"
-    "📍 Córdoba, Argentina\n\n"
+    "✅ Recordatorios automáticos\n\n"
     "¿Qué querés hacer?\n\n"
     "1️⃣  Ver *DEMO* personalizada\n"
     "2️⃣  Hablar con un *asesor*"
@@ -60,25 +39,37 @@ MSG_PEDIR_NOMBRE = (
 
 MSG_ASESOR = (
     "💬 *¡Con gusto te contactamos!*\n\n"
-    "Escribí tu nombre y consulta y te respondemos a la brevedad 👇"
+    "Escribí tu *nombre*, *consulta* y *teléfono* y te respondemos a la brevedad 👇"
 )
+
+PALABRAS_SALIR = ["0", "salir", "chau", "bye", "adios", "adiós", "hasta luego", "nos vemos"]
+PALABRAS_URGENCIA = ["urgencia", "urgente", "emergencia"]
+PALABRAS_MENSAJE = ["mensaje", "dejar mensaje", "quiero dejar un mensaje", "mandar mensaje"]
+
+
+def enviar_presentacion(numero: str):
+    ok = enviar_imagen_con_botones(
+        numero=numero,
+        imagen_url=LOGO_URL,
+        body=(
+            "🤖 *Probá el DEMO con I.A.*\n\n"
+            "✅ Turnos automáticos 24/7\n"
+            "✅ Sin llamadas ni confusiones\n"
+            "✅ Recordatorios automáticos"
+        ),
+        footer="ebotsoluciones.lat",
+        botones=[
+            {"id": "btn_demo",   "title": "🚀 Ver DEMO"},
+            {"id": "btn_asesor", "title": "💬 Hablar con asesor"},
+        ]
+    )
+    if not ok:
+        enviar_texto(numero, MSG_PRESENTACION)
 
 
 def _menu_texto(nombre):
     return (
-        f"🦙 *E-Bot*  —  Hola, *{nombre}* 👋\n\n"
-        f"1️⃣  Sacar un turno\n"
-        f"2️⃣  Ver mis turnos\n"
-        f"3️⃣  Dejar un mensaje\n"
-        f"4️⃣  Urgencia\n"
-        f"0️⃣  Salir"
-    )
-
-
-def _msg_bienvenida_demo(nombre):
-    return (
-        f"🎉 *¡Bienvenido/a, {nombre}!*\n\n"
-        f"Esto es lo que E-Bot puede hacer por tu negocio 👇\n\n"
+        f"🦙 *E-Bot*  ·  _{nombre}_ 🤖\n\n"
         f"1️⃣  Sacar un turno\n"
         f"2️⃣  Ver mis turnos\n"
         f"3️⃣  Dejar un mensaje\n"
@@ -88,19 +79,45 @@ def _msg_bienvenida_demo(nombre):
     )
 
 
-def _msg_cierre(nombre):
-    nombre_fmt = f", *{nombre}*" if nombre else ""
+def _msg_bienvenida_demo(nombre):
     return (
-        f"✅ *Gracias por probar E-Bot{nombre_fmt}* 🎉\n\n"
-        f"Implementamos el sistema en tu negocio en *48hs*.\n\n"
-        f"¿Qué querés hacer?\n\n"
-        f"1️⃣  Quiero que me contacten\n"
-        f"2️⃣  Tengo una pregunta\n"
-        f"3️⃣  Seguir probando\n\n"
-        f"📞 {TELEFONO}\n"
-        f"✉️ {EMAIL}\n"
-        f"🌐 {WEB}"
+        f"🎉 *¡Bienvenido/a, {nombre}!*\n\n"
+        f"Esto es lo que E-Bot puede hacer 👇\n\n"
+        f"1️⃣  Sacar un turno\n"
+        f"2️⃣  Ver mis turnos\n"
+        f"3️⃣  Dejar un mensaje\n"
+        f"4️⃣  Urgencia\n"
+        f"0️⃣  Salir\n\n"
+        f"_Escribí el número o contame qué necesitás._ 🤖"
     )
+
+
+def enviar_cierre_demo(numero: str, nombre: str):
+    nombre_fmt = f"*{nombre}*" if nombre else "E-Bot"
+    ok = enviar_interactivo_botones(
+        numero=numero,
+        header_text="🚀 ¿Te convenciste?",
+        body=(
+            f"Gracias por probar E-Bot, {nombre_fmt} 🎉\n\n"
+            f"Implementamos el sistema en tu negocio en *48hs*.\n\n"
+            f"¿Qué querés hacer?"
+        ),
+        footer="ebotsoluciones.lat",
+        botones=[
+            {"id": "btn_contactar", "title": "📞 Quiero que me contacten"},
+            {"id": "btn_pregunta",  "title": "❓ Tengo una pregunta"},
+            {"id": "btn_volver",    "title": "🔄 Seguir probando"},
+        ]
+    )
+    if not ok:
+        enviar_texto(numero, (
+            f"✅ Gracias por probar E-Bot, {nombre_fmt} 🎉\n\n"
+            f"Implementamos el sistema en *48hs*.\n\n"
+            f"1️⃣  Quiero que me contacten\n"
+            f"2️⃣  Tengo una pregunta\n"
+            f"3️⃣  Seguir probando\n\n"
+            f"✉️ {EMAIL}\n🌐 {WEB}"
+        ))
 
 
 # ═══════════════════════════════════════════════════════════
@@ -148,11 +165,10 @@ def procesar(numero: str, body: str):
         if texto_l in ["1", "demo", "ver demo", "quiero demo", "btn_demo", "🚀 ver demo"]:
             set_user_state(numero, "estado", "FUNNEL_PEDIR_NOMBRE")
             enviar_texto(numero, MSG_PEDIR_NOMBRE)
-        elif texto_l in ["2", "asesor", "hablar", "contacto", "quiero hablar", "btn_asesor", "💬 hablar con asesor"]:
+        elif texto_l in ["2", "asesor", "hablar", "contacto", "btn_asesor", "💬 hablar con asesor"]:
             set_user_state(numero, "estado", "FUNNEL_ASESOR_MSG")
             enviar_texto(numero, MSG_ASESOR)
         else:
-            # Cualquier otra cosa → mostrar opciones de nuevo
             enviar_texto(numero, "Respondé *1* para ver la DEMO o *2* para hablar con un asesor.")
         return
 
@@ -170,11 +186,14 @@ def procesar(numero: str, body: str):
     # ── FUNNEL: MENSAJE AL ASESOR ─────────────────────────────
     if estado == "FUNNEL_ASESOR_MSG":
         guardar_mensaje("Lead", numero, texto)
-        reenviar_a_numero(NUMERO_ASESOR, numero, texto)
+        reenviar_a_numero(
+            NUMERO_ASESOR, numero,
+            f"{texto}\n\n_Desde: {numero}_"
+        )
         enviar_texto(numero, (
             "✅ *¡Mensaje recibido!*\n\n"
             "Un asesor te va a contactar pronto.\n\n"
-            f"📞 {TELEFONO}\n✉️ {EMAIL}\n🌐 {WEB}\n\n"
+            f"✉️ {EMAIL}\n🌐 {WEB}\n\n"
             "_Escribí *hola* para volver al inicio._"
         ))
         set_user_state(numero, "estado", "MENU")
@@ -184,22 +203,22 @@ def procesar(numero: str, body: str):
 
     # ── CIERRE DEMO ───────────────────────────────────────────
     if estado == "FUNNEL_CIERRE":
-        if texto_l in ["1", "contactar", "llamar"]:
+        if texto_l in ["1", "btn_contactar", "quiero que me contacten"]:
             set_user_state(numero, "estado", "FUNNEL_ASESOR_MSG")
-            enviar_texto(numero, "✍️ Dejanos tu nombre y consulta, te contactamos:")
-        elif texto_l in ["2", "pregunta"]:
+            enviar_texto(numero, "✍️ Dejanos tu *nombre*, *consulta* y *teléfono*:")
+        elif texto_l in ["2", "btn_pregunta", "tengo una pregunta"]:
             set_user_state(numero, "estado", "FUNNEL_ASESOR_MSG")
-            enviar_texto(numero, "✍️ Escribí tu pregunta:")
-        elif texto_l in ["3", "seguir", "volver"]:
+            enviar_texto(numero, "✍️ Escribí tu *pregunta* y *teléfono* para contactarte:")
+        elif texto_l in ["3", "btn_volver", "seguir", "volver"]:
             set_user_state(numero, "estado", "MENU")
             enviar_texto(numero, _menu_texto(nombre))
         else:
-            enviar_texto(numero, _msg_cierre(nombre))
+            enviar_cierre_demo(numero, nombre)
         return
 
     # ── SALIR ─────────────────────────────────────────────────
-    if texto_l in ["0", "salir", "chau", "bye"]:
-        enviar_texto(numero, _msg_cierre(nombre))
+    if texto_l in PALABRAS_SALIR:
+        enviar_cierre_demo(numero, nombre)
         set_user_state(numero, "estado", "FUNNEL_CIERRE")
         return
 
@@ -246,14 +265,34 @@ def procesar(numero: str, body: str):
 
 
 # ═══════════════════════════════════════════════════════════
-# MENÚ
+# MENÚ CON IA
 # ═══════════════════════════════════════════════════════════
 
 def _procesar_menu(numero, texto, body_original, nombre):
+    # Numérico primero
     if texto.strip() in ["1", "2", "3", "4", "0"]:
         _menu_numerico(numero, texto.strip(), nombre)
         return
 
+    # Salir por texto
+    if texto.lower() in PALABRAS_SALIR:
+        enviar_cierre_demo(numero, nombre)
+        set_user_state(numero, "estado", "FUNNEL_CIERRE")
+        return
+
+    # Urgencia directa
+    if any(w in texto.lower() for w in PALABRAS_URGENCIA):
+        enviar_texto(numero, f"🚨 *Urgencias*\n\n📞 {TELEFONO}\n✉️ {EMAIL}")
+        enviar_texto(numero, _menu_texto(nombre))
+        return
+
+    # Mensaje directo
+    if any(w in texto.lower() for w in PALABRAS_MENSAJE):
+        set_user_state(numero, "estado", "MENSAJE")
+        enviar_texto(numero, "✍️ Escribí tu mensaje y lo registramos:")
+        return
+
+    # IA para el resto
     resultado = interpretar_mensaje(body_original)
     intent    = resultado["intent"]
     mensaje   = resultado["mensaje"]
@@ -265,11 +304,10 @@ def _procesar_menu(numero, texto, body_original, nombre):
     elif intent == "cancelar_turno":
         set_user_state(numero, "estado", "CANCEL_FECHA")
         enviar_texto(numero, "Indicá la fecha del turno a cancelar (dd/mm/yyyy):")
-    elif intent == "consulta_general" and mensaje:
-        # Si la IA detectó urgencia, mostrar datos de contacto directo
-        if any(w in body_original.lower() for w in ["urgencia", "urgente", "emergencia"]):
+    elif intent == "consulta_general":
+        if any(w in body_original.lower() for w in PALABRAS_URGENCIA):
             enviar_texto(numero, f"🚨 *Urgencias*\n\n📞 {TELEFONO}\n✉️ {EMAIL}")
-        else:
+        elif mensaje:
             enviar_texto(numero, f"🤖 {mensaje}")
         enviar_texto(numero, _menu_texto(nombre))
     else:
@@ -287,7 +325,7 @@ def _menu_numerico(numero, opcion, nombre):
     elif opcion == "4":
         enviar_texto(numero, f"🚨 *Urgencias*\n\n📞 {TELEFONO}\n✉️ {EMAIL}")
     elif opcion == "0":
-        enviar_texto(numero, _msg_cierre(nombre))
+        enviar_cierre_demo(numero, nombre)
         set_user_state(numero, "estado", "FUNNEL_CIERRE")
 
 
