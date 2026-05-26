@@ -1,22 +1,15 @@
-"""
-app.py — Webhook WhatsApp Cloud API (Meta)
-
-Variables de entorno requeridas:
-    WA_TOKEN          Bearer token de Meta
-    WA_PHONE_ID       Phone Number ID
-    WA_VERIFY_TOKEN   Token de verificación (cualquier string secreto tuyo)
-    DATABASE_URL      postgresql://user:pass@host:5432/db
-    OPENAI_API_KEY    clave OpenAI
-"""
-
 from flask import Flask, request, jsonify
 from config   import WA_VERIFY_TOKEN
+from storage  import init_db
 from handlers import procesar
 
 app = Flask(__name__)
 
+# Crea las tablas en PostgreSQL si no existen
+init_db()
 
-# ── HEALTH CHECK ─────────────────────────────────────────────────────────────
+
+# ── HEALTH CHECK ──────────────────────────────────────────────────────────────
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({
@@ -50,26 +43,22 @@ def webhook():
         entry   = data["entry"][0]
         changes = entry["changes"][0]["value"]
 
-        # Ignorar si no hay mensajes (ej: status updates de entrega/lectura)
         if "messages" not in changes:
             return jsonify({"status": "ok"}), 200
 
         mensaje = changes["messages"][0]
 
-        # Solo procesar mensajes de texto
         if mensaje.get("type") != "text":
             return jsonify({"status": "ok"}), 200
 
-        numero = mensaje["from"]          # número en formato internacional
-        body   = mensaje["text"]["body"]  # texto del mensaje
+        numero = mensaje["from"]
+        body   = mensaje["text"]["body"]
 
         procesar(numero, body)
 
     except (KeyError, IndexError):
-        # Payload inesperado — no crashear
         pass
 
-    # Meta espera siempre 200
     return jsonify({"status": "ok"}), 200
 
 
