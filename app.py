@@ -39,10 +39,19 @@ def webhook():
         if "messages" not in changes:
             return jsonify({"status": "ok"}), 200
         mensaje = changes["messages"][0]
-        if mensaje.get("type") != "text":
+        numero  = mensaje["from"]
+
+        if mensaje.get("type") == "text":
+            body = mensaje["text"]["body"]
+        elif mensaje.get("type") == "interactive":
+            # Respuesta de botón interactivo
+            interactive = mensaje.get("interactive", {})
+            if interactive.get("type") == "button_reply":
+                body = interactive["button_reply"]["id"]
+            else:
+                return jsonify({"status": "ok"}), 200
+        else:
             return jsonify({"status": "ok"}), 200
-        numero = mensaje["from"]
-        body   = mensaje["text"]["body"]
         logging.info("MSG de %s: %s", numero, body)
         procesar(numero, body)
     except (KeyError, IndexError) as e:
