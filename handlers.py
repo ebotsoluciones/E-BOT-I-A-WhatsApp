@@ -93,29 +93,30 @@ def _msg_bienvenida_demo(nombre):
 
 
 def enviar_cierre_demo(numero: str, nombre: str):
-    nombre_fmt = f"*{nombre}*" if nombre else "E-Bot"
+    nombre_fmt = nombre if nombre else "E-Bot"
+    # Header max 60 chars, body max 1024 chars
+    header = "🚀 ¿Te convenciste?"
+    body   = (
+        f"Gracias por probar, *{nombre_fmt}* 🎉\n\n"
+        f"Implementamos E-Bot en tu negocio en *48hs*.\n\n"
+        f"¿Qué querés hacer?"
+    )
     ok = enviar_interactivo_botones(
         numero=numero,
-        header_text="🚀 ¿Te convenciste?",
-        body=(
-            f"Gracias por probar E-Bot, {nombre_fmt} 🎉\n\n"
-            f"Implementamos el sistema en tu negocio en *48hs*.\n\n"
-            f"¿Qué querés hacer?"
-        ),
+        header_text=header,
+        body=body,
         footer="ebotsoluciones.lat",
         botones=[
-            {"id": "btn_contactar", "title": "📞 Quiero que me contacten"},
-            {"id": "btn_pregunta",  "title": "❓ Tengo una pregunta"},
-            {"id": "btn_volver",    "title": "🔄 Seguir probando"},
+            {"id": "btn_contactar", "title": "Contactar un asesor"},
+            {"id": "btn_volver",    "title": "Seguir probando"},
         ]
     )
     if not ok:
         enviar_texto(numero, (
-            f"✅ Gracias por probar E-Bot, {nombre_fmt} 🎉\n\n"
+            f"✅ Gracias por probar E-Bot, *{nombre_fmt}* 🎉\n\n"
             f"Implementamos el sistema en *48hs*.\n\n"
-            f"1️⃣  Quiero que me contacten\n"
-            f"2️⃣  Tengo una pregunta\n"
-            f"3️⃣  Seguir probando\n\n"
+            f"1️⃣  Contactar un asesor\n"
+            f"2️⃣  Seguir probando\n\n"
             f"✉️ {EMAIL}\n🌐 {WEB}"
         ))
 
@@ -166,6 +167,7 @@ def procesar(numero: str, body: str):
             set_user_state(numero, "estado", "FUNNEL_PEDIR_NOMBRE")
             enviar_texto(numero, MSG_PEDIR_NOMBRE)
         elif texto_l in ["2", "asesor", "hablar", "contacto", "btn_asesor", "💬 hablar con asesor"]:
+            set_user_state(numero, "motivo_contacto", "Hablar con asesor")
             set_user_state(numero, "estado", "FUNNEL_ASESOR_MSG")
             enviar_texto(numero, MSG_ASESOR)
         else:
@@ -185,10 +187,11 @@ def procesar(numero: str, body: str):
 
     # ── FUNNEL: MENSAJE AL ASESOR ─────────────────────────────
     if estado == "FUNNEL_ASESOR_MSG":
-        guardar_mensaje("Lead", numero, texto)
+        motivo = datos.get("motivo_contacto", "Consulta general")
+        guardar_mensaje("Lead", numero, f"[{motivo}] {texto}")
         reenviar_a_numero(
             NUMERO_ASESOR, numero,
-            f"{texto}\n\n_Desde: {numero}_"
+            f"*Motivo:* {motivo}\n*Mensaje:* {texto}\n*Número:* {numero}"
         )
         enviar_texto(numero, (
             "✅ *¡Mensaje recibido!*\n\n"
@@ -203,13 +206,11 @@ def procesar(numero: str, body: str):
 
     # ── CIERRE DEMO ───────────────────────────────────────────
     if estado == "FUNNEL_CIERRE":
-        if texto_l in ["1", "btn_contactar", "quiero que me contacten"]:
+        if texto_l in ["1", "btn_contactar", "contactar un asesor", "contactar"]:
+            set_user_state(numero, "motivo_contacto", "Contactar asesor")
             set_user_state(numero, "estado", "FUNNEL_ASESOR_MSG")
             enviar_texto(numero, "✍️ Dejanos tu *nombre*, *consulta* y *teléfono*:")
-        elif texto_l in ["2", "btn_pregunta", "tengo una pregunta"]:
-            set_user_state(numero, "estado", "FUNNEL_ASESOR_MSG")
-            enviar_texto(numero, "✍️ Escribí tu *pregunta* y *teléfono* para contactarte:")
-        elif texto_l in ["3", "btn_volver", "seguir", "volver"]:
+        elif texto_l in ["2", "btn_volver", "seguir", "volver", "seguir probando"]:
             set_user_state(numero, "estado", "MENU")
             enviar_texto(numero, _menu_texto(nombre))
         else:
